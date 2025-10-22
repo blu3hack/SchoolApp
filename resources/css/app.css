@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.tl-background {
+    background-color: transparent !important;
+    width: 100vh;
+    height: 100dvh;
+}
+
+.bg-book {
+    background-color: #fff;
+    background-image: linear-gradient(to right, #fff 40px, transparent 40px),
+        /* garis biru kiri */
+            repeating-linear-gradient(
+                to bottom,
+                transparent 0px,
+                transparent 23px,
+                #9ca3af 24px
+            );
+    background-size: 100% 24px; /* jarak garis */
+}
+
+.over {
+    z-index: 10000;
+}
+
+.tl-zoom {
+    display: none;
+}
+
+/* Hilangkan scroll bar di semua browser */
+::-webkit-scrollbar {
+    display: none; /* Chrome, Safari */
+}
+
+html,
+body {
+    -ms-overflow-style: none; /* IE dan Edge */
+    scrollbar-width: none; /* Firefox */
+}
