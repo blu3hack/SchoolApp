@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import * as pdfjs from "pdfjs-dist";
+import HTMLFlipBook from "react-pageflip";
 import "pdfjs-dist/web/pdf_viewer.css";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `/pdfjs/pdf.worker.mjs`;
@@ -7,77 +8,180 @@ pdfjs.GlobalWorkerOptions.workerSrc = `/pdfjs/pdf.worker.mjs`;
 export default function Draw() {
     const containerRef = useRef(null);
     const [modalUrl, setModalUrl] = useState(null);
-    const PDF_URL = "/pdf/test_again.pdf";
+    const [pdfDoc, setPdfDoc] = useState(null);
+    const [pageImages, setPageImages] = useState([]);
+    const [pageLinks, setPageLinks] = useState([]);
+    const [pdfSize, setPdfSize] = useState({ width: 800, height: 1000 });
 
+    const PDF_URL = "/pdf/test_link.pdf";
+
+    // 1️⃣ Muat PDF
     useEffect(() => {
         const loadPdf = async () => {
-            const container = containerRef.current;
-            container.innerHTML = "";
+            try {
+                const pdf = await pdfjs.getDocument(PDF_URL).promise;
+                // Ambil ukuran asli dari halaman pertama PDF
+                const firstPage = await pdf.getPage(1);
+                const viewport = firstPage.getViewport({ scale: 1 });
+                let { width, height } = viewport;
 
-            const pdf = await pdfjs.getDocument(PDF_URL).promise;
-            const scale = 1.5;
+                // Skala agar muat di layar (maks 90% lebar layar)
+                const maxWidth = window.innerWidth * 0.9;
+                if (width > maxWidth) {
+                    const ratio = maxWidth / width;
+                    width *= ratio;
+                    height *= ratio;
+                }
 
-            for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-                const page = await pdf.getPage(pageNum);
-                const viewport = page.getViewport({ scale });
-
-                const pageWrapper = document.createElement("div");
-                pageWrapper.className = "relative mb-5";
-                pageWrapper.style.width = `${viewport.width}px`;
-                pageWrapper.style.height = `${viewport.height}px`;
-
-                const canvas = document.createElement("canvas");
-                const ctx = canvas.getContext("2d");
-                canvas.width = viewport.width;
-                canvas.height = viewport.height;
-                canvas.style.display = "block";
-                pageWrapper.appendChild(canvas);
-
-                await page.render({ canvasContext: ctx, viewport }).promise;
-
-                const annotations = await page.getAnnotations();
-                annotations.forEach((ann) => {
-                    if (ann.subtype === "Link" && ann.url) {
-                        const rect = pdfjs.Util.normalizeRect(ann.rect);
-                        const [x1, y1, x2, y2] = rect;
-                        const x = x1 * scale;
-                        const y = viewport.height - y2 * scale;
-                        const width = (x2 - x1) * scale;
-                        const height = (y2 - y1) * scale;
-
-                        const link = document.createElement("div");
-                        link.style.position = "absolute";
-                        link.style.left = `${x}px`;
-                        link.style.top = `${y}px`;
-                        link.style.width = `${width}px`;
-                        link.style.height = `${height}px`;
-                        link.style.cursor = "pointer";
-                        link.style.zIndex = 20;
-                        link.style.backgroundColor = "rgba(255, 0, 0, 0)";
-
-                        // Klik link -> tampilkan modal
-                        link.onclick = () => setModalUrl(ann.url);
-
-                        pageWrapper.appendChild(link);
-                    }
-                });
-
-                container.appendChild(pageWrapper);
+                setPdfSize({ width, height });
+                setPdfDoc(pdf);
+                firstPage.cleanup();
+            } catch (err) {
+                console.error("Error loading PDF:", err);
             }
         };
-
         loadPdf();
     }, []);
 
-    return (
-        <div className="relative">
-            {/* Kontainer PDF */}
-            <div
-                ref={containerRef}
-                className="w-full h-full overflow-y-auto bg-gray-50 p-10"
-            ></div>
+    // 2️⃣ Render halaman dan link
+    useEffect(() => {
+        if (!pdfDoc) return;
 
-            {/* Modal */}
+        const scale = 1;
+        const tempImages = [];
+        const tempLinks = [];
+
+        const renderPageToImage = async (pageNum) => {
+            const page = await pdfDoc.getPage(pageNum);
+            const viewport = page.getViewport({ scale });
+
+            const canvas = document.createElement("canvas");
+            const ctx = canvas.getContext("2d");
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+
+            await page.render({ canvasContext: ctx, viewport }).promise;
+
+            // Simpan gambar halaman
+            const imageData = canvas.toDataURL("image/png");
+            tempImages.push({
+                src: imageData,
+                width: viewport.width,
+                height: viewport.height,
+            });
+
+            // Ambil anotasi link
+            const annotations = await page.getAnnotations();
+            const links = annotations
+                .filter((ann) => ann.subtype === "Link")
+                .map((ann) => {
+                    const rect = ann.rect; // [x1, y1, x2, y2] PDF space
+                    const [x1, y1, x2, y2] =
+                        viewport.convertToViewportRectangle(rect);
+
+                    const left = Math.min(x1, x2);
+                    const top = Math.min(y1, y2);
+                    const width = Math.abs(x2 - x1);
+                    const height = Math.abs(y2 - y1);
+
+                    return {
+                        x: left,
+                        y: top,
+                        width,
+                        height,
+                        url: ann.url || null,
+                        dest: ann.dest || null,
+                    };
+                });
+            tempLinks.push(links);
+        };
+
+        const processAllPages = async () => {
+            for (let i = 1; i <= pdfDoc.numPages; i++) {
+                await renderPageToImage(i);
+            }
+            setPageImages(tempImages);
+            setPageLinks(tempLinks);
+        };
+
+        processAllPages();
+    }, [pdfDoc]);
+
+    // 3️⃣ Render flipbook
+    return (
+        <div className="relative bg-gray-50 min-h-screen flex flex-col items-center justify-center p-10">
+            {pageImages.length > 0 ? (
+                <HTMLFlipBook
+                    width={pdfSize.width}
+                    height={pdfSize.height}
+                    showCover={true}
+                    maxShadowOpacity={0.5}
+                    className="shadow-2xl"
+                    style={{ backgroundColor: "#f9fafb" }}
+                    ref={containerRef}
+                    clickEventForward={false} // ⛔ kadang perlu untuk cegah click forwarding
+                >
+                    {pageImages.map((page, idx) => (
+                        <div
+                            key={idx}
+                            className="relative flex items-center justify-center bg-white"
+                            style={{
+                                width: page.width,
+                                height: page.height,
+                            }}
+                        >
+                            <img
+                                src={page.src}
+                                alt={`Page ${idx + 1}`}
+                                width={page.width}
+                                height={page.height}
+                                style={{
+                                    display: "block",
+                                    width: "100%",
+                                    height: "100%",
+                                    objectFit: "contain",
+                                }}
+                            />
+
+                            {/* Area link transparan */}
+                            {pageLinks[idx]?.map((link, i) => (
+                                <div
+                                    key={i}
+                                    style={{
+                                        position: "absolute",
+                                        left: `${link.x}px`,
+                                        top: `${link.y}px`,
+                                        width: `${link.width}px`,
+                                        height: `${link.height}px`,
+                                        cursor: "pointer",
+                                        backgroundColor: "rgba(0, 0, 255, 0.1)", // bisa dihapus
+                                        zIndex: 9999, // pastikan di atas semua
+                                        pointerEvents: "auto", // aktifkan klik hanya di area ini
+                                    }}
+                                    onMouseDown={(e) => {
+                                        e.stopPropagation();
+                                    }}
+                                    onMouseUp={(e) => {
+                                        e.stopPropagation();
+                                    }}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        e.preventDefault();
+
+                                        if (link.url) {
+                                            setModalUrl(link.url);
+                                        }
+                                    }}
+                                ></div>
+                            ))}
+                        </div>
+                    ))}
+                </HTMLFlipBook>
+            ) : (
+                <div className="text-gray-400 text-lg">Memuat PDF...</div>
+            )}
+
+            {/* 4️⃣ Modal Viewer */}
             {modalUrl && (
                 <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
                     <div className="bg-white w-11/12 md:w-3/4 lg:w-1/2 h-3/4 rounded-2xl shadow-xl relative">
@@ -87,11 +191,11 @@ export default function Draw() {
                         >
                             &times;
                         </button>
-
                         <iframe
                             src={modalUrl}
                             title="PDF Link Content"
                             className="w-full h-full rounded-2xl"
+                            sandbox="allow-same-origin allow-scripts allow-popups"
                         ></iframe>
                     </div>
                 </div>

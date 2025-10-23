@@ -27,59 +27,6 @@ function PageClass() {
         id_nama: usersID || "", // default dari props
     });
 
-    useEffect(() => {
-        const init = async () => {
-            // Buka / buat database IndexedDB
-            const db = await openDB("MyPDFDB", 1, {
-                upgrade(db) {
-                    if (!db.objectStoreNames.contains("pdfs")) {
-                        db.createObjectStore("pdfs", { keyPath: "id" });
-                    }
-                },
-            });
-
-            let data = [];
-
-            if (navigator.onLine) {
-                try {
-                    const res = await fetch("/indexdb");
-                    if (res.ok) {
-                        data = await res.json();
-
-                        // Simpan data baru ke IndexedDB
-                        const tx = db.transaction("pdfs", "readwrite");
-                        const store = tx.objectStore("pdfs");
-                        for (const item of data) {
-                            await store.put(item);
-                        }
-                        await tx.done;
-
-                        console.log("Data dari server disimpan ke IndexedDB");
-                    }
-                } catch (err) {
-                    console.log("Gagal fetch dari server:", err);
-                }
-            }
-
-            if (data.length === 0) {
-                // Jika offline atau fetch gagal → ambil dari IndexedDB
-                const tx = db.transaction("pdfs", "readonly");
-                const store = tx.objectStore("pdfs");
-                data = await store.getAll();
-                console.log("Data dari IndexedDB:", data);
-            }
-
-            // Set PDF pertama jika ada
-            if (data.length > 0) {
-                setPdfUrl(
-                    URL.createObjectURL(data[0].blob || data[0].file_blob)
-                );
-            }
-        };
-
-        init();
-    }, []);
-
     // Update file_pdf setiap kali selectedEbook berubah
     useEffect(() => {
         if (selectedEbook) {
