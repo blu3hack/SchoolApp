@@ -172,12 +172,14 @@ function TokenFormModal({ open, onClose, onSubmit, data, setData, errors }) {
                                             <option value="4">4</option>
                                             <option value="5">5</option>
                                             <option value="6">6</option>
+                                            <option value="Umum">Umum</option>
                                         </>
                                     ) : role === "AdminSMP" ? (
                                         <>
                                             <option value="7">7</option>
                                             <option value="8">8</option>
                                             <option value="9">9</option>
+                                            <option value="Umum">Umum</option>
                                         </>
                                     ) : (
                                         <>
@@ -188,6 +190,7 @@ function TokenFormModal({ open, onClose, onSubmit, data, setData, errors }) {
                                             <option value="7">7</option>
                                             <option value="8">8</option>
                                             <option value="9">9</option>
+                                            <option value="Umum">Umum</option>
                                         </>
                                     )}
                                 </select>
@@ -277,7 +280,8 @@ function TokenFormModal({ open, onClose, onSubmit, data, setData, errors }) {
                                 <option value="IPS">IPS</option>
                                 <option value="Matematika">Matematika</option>
                                 <option value="PABP">PABP</option>
-                                <option value="Seni Budaya">Seni Budaya</option>
+                                <option value="Seni Budaya">Umum</option>
+                                <option value="Umum">Seni Budaya</option>
                             </select>
                         </div>
 

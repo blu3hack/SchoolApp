@@ -224,7 +224,8 @@ export default function Dashboard({
                                 </div>
                             </div>
 
-                            {auth.user.role === "Siswa" ? (
+                            {auth.user.role === "Siswa" ||
+                            auth.user.role === "Alumni" ? (
                                 <div className="max-w-md">
                                     <a
                                         href="/ClassEbook"

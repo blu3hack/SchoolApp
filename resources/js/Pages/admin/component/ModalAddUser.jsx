@@ -203,12 +203,14 @@ function UserFormModal({ open, onClose, onSubmit, data, setData, errors }) {
                                             <option value="4">4</option>
                                             <option value="5">5</option>
                                             <option value="6">6</option>
+                                            <option value="Umum">Umum</option>
                                         </>
                                     ) : role === "AdminSMP" ? (
                                         <>
                                             <option value="7">7</option>
                                             <option value="8">8</option>
                                             <option value="9">9</option>
+                                            <option value="Umum">Umum</option>
                                         </>
                                     ) : (
                                         <>
@@ -219,6 +221,7 @@ function UserFormModal({ open, onClose, onSubmit, data, setData, errors }) {
                                             <option value="7">7</option>
                                             <option value="8">8</option>
                                             <option value="9">9</option>
+                                            <option value="Umum">Umum</option>
                                         </>
                                     )}
                                 </select>
@@ -303,6 +306,7 @@ function UserFormModal({ open, onClose, onSubmit, data, setData, errors }) {
                                     <option value="Admin">Super Admin</option>
                                     <option value="AdminSD">Admin SD</option>
                                     <option value="AdminSMP">Admin SMP</option>
+                                    <option value="Alumni">Alumni</option>
                                 </select>
                             ) : (
                                 // kalau bukan Admin → default "Siswa"

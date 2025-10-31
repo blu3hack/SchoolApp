@@ -44,7 +44,7 @@ Route::middleware('auth')->group(function () {
 // =================================================> Routing Untuk Role Siswa <===========================================================
 
 // midleware untuk Siswa
-Route::middleware(['auth', 'role:Siswa'])->group(function () {
+Route::middleware(['auth', 'role:Siswa|Alumni'])->group(function () {
     Route::get('/ClassEbook', [ClassEbookController::class, 'ClassEbook'])->name('class-ebook');
     Route::post('/ClassEbook', [ClassEbookController::class, 'sendtoken'])->name('sendtoken');
     Route::get('/drawings', [DrawingController::class, 'index']);
@@ -94,6 +94,4 @@ Route::get('/off', function () {
 });
 
 Route::get('/api/token', [APIController::class, 'index'])->name('api.token');
-
-
 require __DIR__.'/auth.php';
