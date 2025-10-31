@@ -5,7 +5,7 @@ import React, { useState, useEffect } from "react";
 import { useForm } from "@inertiajs/react";
 import { Dialog } from "@headlessui/react";
 import { router } from "@inertiajs/react";
-import ModalUploadUsers from "./component/ModalUploadUsers";
+import ModalUploadToken from "./component/ModalUploadToken";
 import { showAlert } from "./js/UsersHandling";
 import TokenFormModal from "./component/ModalAddTokens";
 
@@ -457,7 +457,7 @@ function AddUsers() {
             </div>
             {/* Modal upload  */}
 
-            <ModalUploadUsers
+            <ModalUploadToken
                 open={isOpen}
                 onClose={() => setIsOpen(false)}
                 onSubmit={submit}

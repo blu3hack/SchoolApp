@@ -128,11 +128,11 @@ function ModalUploadUsers({
                                 </div>
                                 <div className="flex items-center space-x-2 text-xs text-white/70 bg-white/5 backdrop-blur-sm rounded-lg p-3 border border-white/10">
                                     <a
-                                        href="file/adduser.xlsx"
+                                        href="file/addtoken.xlsx"
                                         download
                                         className="underline hover:text-white/90"
                                     >
-                                        Download File Format Upload Users
+                                        Download File Format Upload Token
                                     </a>
                                 </div>
 
